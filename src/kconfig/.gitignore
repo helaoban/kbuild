@@ -1,4 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
+/kb-conf
+/kb-[gmnq]conf
+/kb-[gmnq]conf-cfg
 /conf
 /[gmnq]conf
 /[gmnq]conf-cfg

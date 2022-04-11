@@ -1,0 +1,31 @@
+#! /usr/bin/env -S guile -e main -s
+!#
+(use-modules (srfi srfi-37))
+(define (main args)
+  (let* ((results (make-hash-table 2))
+	 (options `(,(option '(#\v "version") #f #f
+			     (lambda _ (display "kbuild-config version 0.1.0\n") (quit)))
+		    ,(option '(#\h "help") #f #f
+			     (lambda _ (display "\
+kbuild-config [options]
+  -p, --prefix     Set the install prefix
+  -v, --version    Display version
+  -h, --help       Display this help
+")
+				     (quit)))
+		    ,(option '(#\p "prefix") #t #f
+			     (lambda (o n x seeds)
+			       (hashq-set! results 'prefix x)
+			       seeds)))))
+    (hashq-set! results 'prefix "/usr/lib/kbuild")
+    (args-fold args
+		       options
+		       (lambda (o n x vals)
+			 (display "unrecognized option " n))
+		       (lambda (op loads) (cons op loads))
+		       '())
+    (with-output-to-file ".config"
+      (lambda _
+	(format (current-output-port) "PREFIX='~a'"
+		(hashq-ref results 'prefix))))
+    (newline)))

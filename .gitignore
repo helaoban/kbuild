@@ -23,3 +23,5 @@ config.mk
 .config
 .config.old
 perf.data
+kbuild/
+build/

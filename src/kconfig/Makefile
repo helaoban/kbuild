@@ -1,4 +1,4 @@
-all: conf nconf
+all: kb-conf kb-nconf
 
 # Kconfig
 # ---------------------------------------------------------------------------
@@ -10,9 +10,9 @@ $(obj)/lexer.lex.o: $(obj)/parser.tab.h
 CFLAGS_lexer.lex.o	:= -I $(srctree)/$(src)
 CFLAGS_parser.tab.o	:= -I $(srctree)/$(src)
 
-conf: conf.o $(common-objs)
+kb-conf: conf.o $(common-objs)
 	$(CC) -o $@ $^ -lncursesw -lmenuw -lpanelw
 
 # nconf: Used for the nconfig target based on ncurses
-nconf: nconf.o nconf.gui.o $(common-objs)
+kb-nconf: nconf.o nconf.gui.o $(common-objs)
 	$(CC) -o $@ $^ -lncursesw -lmenuw -lpanelw

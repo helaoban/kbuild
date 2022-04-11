@@ -1,4 +1,4 @@
-all: fixdep kconfig
+all: fixdep kconfig kbuild.sh
 
 # progs-y	:= fixdep
 # always	:= $(progs-y)
@@ -9,7 +9,15 @@ all: fixdep kconfig
 fixdep: fixdep.o
 	$(CC) -o $@ $<
 
+kbuild.sh: kbuild.m4
+	m4 --define=M4_PREFIX=$(PREFIX) $< > $@
+	chmod +x $@
+
 kconfig:
 	cd kconfig && $(MAKE)
 
 .PHONY: kconfig
+
+clean:
+	rm -f kbuild.sh
+	rm -f fixdep
