@@ -6,8 +6,24 @@ CFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-point
 
 export CC CFLAGS LEX YACC
 
-
 all: src
+
+# LEX
+# ---------------------------------------------------------------------------
+
+%.lex.c: %.l
+	$(LEX) -o$@ -L $<
+
+# YACC
+# ---------------------------------------------------------------------------
+%.tab.c %.tab.h: %.y
+	$(YACC) -o $(basename $@).c --defines=$(basename $@).h -t -l $<
+
+
+# C
+# ---------------------------------------------------------------------------
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 src:
 	cd $@ && $(MAKE)
