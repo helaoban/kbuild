@@ -39,7 +39,7 @@ kbuild [options]
 	     (let* ((filename (cdr entry))
 		    (src (string-append pfx "/lib/" filename))
 		    (dest (string-append "kbuild/" filename)))
-	       (display (format #f "COPY OP: ~a -> ~a\n" src dest))
+	       (display (format #f "COPYING: ~a -> ~a\n" src dest))
 	       (copy-file src dest))
 	     (begin
 	       (format (current-error-port) "Invalid type: ~a\n" x)

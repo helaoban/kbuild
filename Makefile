@@ -65,6 +65,6 @@ install: src
 
 devconf:
 	mkdir --parents build
-	./config --prefix="$(srctree)/build"
+	./configure --prefix="$(srctree)/build"
 
 .PHONY: devconf

@@ -29,3 +29,5 @@ kbuild-config [options]
 	(format (current-output-port) "PREFIX='~a'"
 		(hashq-ref results 'prefix))))
     (newline)))
+
+(main (command-line))
