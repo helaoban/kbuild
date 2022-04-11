@@ -5,6 +5,24 @@ all: kb-conf kb-nconf
 
 common-objs	:= confdata.o expr.o lexer.lex.o menu.o parser.tab.o \
 		   preprocess.o symbol.o util.o
+%.lex.c: %.l
+	$(LEX) -o$@ -L $<
+
+
+lexer.lex.o: lexer.lex.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# LEX
+# ---------------------------------------------------------------------------
+
+%.lex.c: %.l
+	$(LEX) -o$@ -L $<
+
+# YACC
+# ---------------------------------------------------------------------------
+
+%.tab.c %.tab.h: %.y
+	$(YACC) -o $(basename $@).c --defines=$(basename $@).h -t -l $<
 
 $(obj)/lexer.lex.o: $(obj)/parser.tab.h
 CFLAGS_lexer.lex.o	:= -I $(srctree)/$(src)
