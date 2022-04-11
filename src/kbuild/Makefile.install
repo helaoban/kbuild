@@ -1,0 +1,36 @@
+##==============================================================
+## Install
+
+install_bin:
+	find $(BUILDDIR)/bin -type f \
+	| sed 's|$(BUILDDIR)/bin/||g' \
+	| while read file; do \
+		install -D $(BUILDDIR)/bin/$$file $(BIN_DIR)/$$file; \
+	done
+
+install_release:
+	find $(BUILDDIR)/rel -type f \
+	| sed 's|$(BUILDDIR)/rel/||g' \
+	| while read file; do \
+		install -D $(BUILDDIR)/rel/$$file $(ERL_ROOT_DIR)/$$file; \
+	done
+
+install_etc:
+	find $(BUILDDIR)/etc -type f \
+	| sed 's|$(BUILDDIR)/etc/||g' \
+	| while read file; do \
+		install -D $(BUILDDIR)/etc/$$file $(CONF_DIR)/$$file; \
+	done
+
+install_web:
+	find $(BUILDDIR)/www -type f \
+	| sed 's|$(BUILDDIR)/www/||g' \
+	| while read file; do \
+		install -D $(BUILDDIR)/www/$$file $(WEB_DIR)/$$file; \
+	done
+
+install: install_bin install_etc
+install: install_release install_web
+
+PHONY += install install_bin install_etc
+PHONY += install_release install_web

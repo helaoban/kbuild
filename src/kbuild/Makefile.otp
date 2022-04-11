@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Build userspace programs for the target system
+#
+
+__otp-objs 	:= $(sort $(otp-objs))
+otp-beam	:= $(sort $(filter %.beam, $(__otp-objs)))
+otp-app		:= $(sort $(filter %.app, $(__otp-objs)))
+otp-so		:= $(sort $(filter %.so, $(__otp-objs)))
+otp-so-objs	:= $(sort $(foreach m,$(otp-so),$($(m:.so=-objs))))
+
+otp-so-ldlibs	:= $(sort $(foreach m,$(otp-so),$($(m:.so=-ldlibs))))
+otp-so-ldlibs	:= $(sort $(foreach m,$(otp-so-ldlibs), -l$(m)))
+
+otp-so-hostldlibs	:= $(foreach m,$(otp-so),$($(m:.so=-hostldlibs)))
+otp-so-hostldlibs	:= $(foreach m,$(otp-so-hostldlibs), $(srctree)/lib/$(m)/lib_pic.a)
+
+otp-beam     	:= $(addprefix $(obj)/ebin/,$(otp-beam))
+otp-app     	:= $(addprefix $(obj)/ebin/,$(otp-app))
+otp-so     	:= $(addprefix $(obj)/priv/,$(otp-so))
+otp-so-objs	:= $(addprefix $(obj)/priv/,$(otp-so-objs))
+
+# Erlang beam files
+$(obj)/ebin/%.beam: $(src)/src/%.erl FORCE | $(obj)/ebin
+	$(call if_changed_rule,erlc_beam_erl)
+
+$(obj)/ebin/%.beam: $(src)/src/%.lfe FORCE | $(obj)/ebin
+	$(call if_changed_rule,lfec_beam_lfe)
+
+# Erlang app files
+quiet_cmd_erlapp = CP ERL APP $@
+cmd_erlapp = cp $< $@
+$(otp-app): $(obj)/ebin/%.app: $(src)/src/%.app.src FORCE | $(obj)/ebin
+	$(call if_changed,erlapp)
+
+# Compile .c file, create position independent .o file
+# otp-sobjs -> .o
+quiet_cmd_cc_pico_c = CC -fPIC $@
+cmd_cc_pico_c = $(CC) $(c_flags) -fPIC -c -o $@ $<
+
+define rule_cc_pico_c
+	$(call echo-cmd,cc_pico_c) $(cmd_cc_pico_c);			     \
+	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,cc_pico_c)' >    \
+	                                              $(dot-target).tmp;     \
+	rm -f $(depfile);						     \
+	mv -f $(dot-target).tmp $(dot-target).cmd
+endef
+
+$(otp-so-objs): $(obj)/priv/%.o: $(src)/c_src/%.c FORCE | $(obj)/priv
+	$(call if_changed_rule,cc_pico_c)
+
+# Share object from position-independent o files
+quiet_cmd_c_so_o	= LLD -shared $@
+      cmd_c_so_o	= $(CC) $(LDFLAGS) -shared -o $@ $(otp-so-objs) \
+			  $(otp-so-hostldlibs) $(otp-so-ldlibs)
+$(otp-so): $(obj)/%: $(otp-so-hostldlibs) $(otp-so-objs) FORCE
+	$(call if_changed,c_so_o)
+
+targets += $(otp-beam) $(otp-app) $(otp-so-objs) $(otp-so)
+always 	+= $(otp-beam) $(otp-app) $(otp-so-objs) $(otp-so)

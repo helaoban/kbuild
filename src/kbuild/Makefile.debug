@@ -1,0 +1,16 @@
+DEBUG_CFLAGS	+= -g -DDEBUG
+
+ifdef CONFIG_DEBUG_INFO_REDUCED
+DEBUG_CFLAGS	+= -fno-var-tracking
+DEBUG_CFLAGS	+= -femit-struct-debug-baseonly
+endif
+
+ifdef CONFIG_DEBUG_INFO_COMPRESSED
+DEBUG_CFLAGS	+= -gz=zlib
+KBUILD_AFLAGS	+= -gz=zlib
+KBUILD_LDFLAGS	+= --compress-debug-sections=zlib
+endif
+
+KBUILD_CFLAGS += $(DEBUG_CFLAGS)
+export DEBUG_CFLAGS
+

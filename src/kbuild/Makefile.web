@@ -1,0 +1,82 @@
+join-with 	= $(subst $(space),$1,$(strip $2))
+
+web_build_dir 	= $(objtree)/ui/build
+
+__web-objs 	:= $(sort $(web-objs))
+js-objs		:= $(sort $(filter %.js, $(__web-objs)))
+css-objs	:= $(sort $(filter %.css, $(__web-objs)))
+yaws-objs	:= $(sort $(filter %.yaws, $(__web-objs)))
+jpg-objs	:= $(sort $(filter %.jpg, $(__web-objs)))
+png-objs	:= $(sort $(filter %.png, $(__web-objs)))
+svg-objs	:= $(sort $(filter %.svg, $(__web-objs)))
+
+js-objs     	:= $(addprefix $(web_build_dir)/js/,$(js-objs))
+css-objs     	:= $(addprefix $(web_build_dir)/css/,$(css-objs))
+yaws-objs     	:= $(addprefix $(web_build_dir)/,$(yaws-objs))
+jpg-objs     	:= $(addprefix $(web_build_dir)/img/,$(jpg-objs))
+png-objs     	:= $(addprefix $(web_build_dir)/img/,$(png-objs))
+svg-objs     	:= $(addprefix $(web_build_dir)/img/,$(svg-objs))
+
+js_node_path 	= "$(call join-with,:,$(js_libs)):$(obj)/src:$(JS_INCLUDE):$(FLF_JS_DEPS)"
+
+$(web_build_dir)/%:
+	mkdir --parents $@
+
+# JS files
+quiet_cmd_js = JS $@
+cmd_js = NODE_PATH=$(js_node_path) $(JS) $< --outfile=$@ $(js_flags)
+define rule_js
+	$(call echo-cmd,js) $(cmd_js);                     		 	 \
+	printf '%s: %s' $@ $< > $(depfile);					 \
+	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,js)' >    	 	 \
+	                                              $(dot-target).tmp;         \
+	rm -f $(depfile);						         \
+	mv -f $(dot-target).tmp $(dot-target).cmd
+endef
+
+$(js-objs): $(web_build_dir)/js/%.js: $(src)/src/%.js FORCE | $(web_build_dir)/js
+	$(call if_changed_rule,js)
+
+
+# CSS files
+quiet_cmd_css = CP $@
+cmd_css = cp $< $@
+
+$(css-objs): $(web_build_dir)/css/%.css: $(src)/%.css FORCE | $(web_build_dir)/css
+	$(call if_changed,css)
+
+# YAWS files
+quiet_cmd_yaws = CP $@
+cmd_yaws = cp $< $@
+
+$(yaws-objs): $(web_build_dir)/%.yaws: $(src)/%.yaws FORCE | $(web_build_dir)
+	$(call if_changed,yaws)
+
+# Img files
+quiet_cmd_img = CP $@
+cmd_img = cp $< $@
+
+$(jpg-objs): $(web_build_dir)/img/%.jpg: $(src)/%.jpg FORCE | $(web_build_dir)/img
+	$(call if_changed,img)
+
+$(png-objs): $(web_build_dir)/img/%.png: $(src)/%.png FORCE | $(web_build_dir)/img
+	$(call if_changed,img)
+
+$(svg-objs): $(web_build_dir)/img/%.svg: $(src)/%.svg FORCE | $(web_build_dir)/img
+	$(call if_changed,img)
+
+# # JSON files
+# quiet_cmd_json = CP $@
+# cmd_json = cp $< $@
+
+# $(json-objs): $(web_build_dir)/data/%.json: $(src)/%.json FORCE | $(web_build_dir)/data
+# 	$(call if_changed,json)
+
+targets 	+= $(js-objs) $(css-objs) $(yaws-objs) $(jpg-objs) $(png-objs) $(svg-objs)
+always 		+= $(js-objs) $(css-objs) $(yaws-objs) $(jpg-objs) $(png-objs) $(svg-objs)
+
+# yolo:
+# 	@echo "DAWG" "$(css-objs)"
+
+# targets += yolo
+# always += yolo

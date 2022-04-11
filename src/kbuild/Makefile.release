@@ -1,0 +1,19 @@
+##==============================================================
+## Release
+
+$(BUILDDIR)/make-release: $(BUILDDIR)/make-release.in
+	$(call substitute,$<,$@)
+	chmod +x $@
+
+$(BUILDDIR)/rel:
+	mkdir --parents $@
+
+release: build $(BUILDDIR)/make-release | $(BUILDDIR)/rel
+	ERL_LIBS="$(SRCDIR)/src" \
+	$(BUILDDIR)/make-release
+
+clean_release:
+	rm -rf $(BUILDDIR)/rel
+	rm -f $(BUILDDIR)/release
+
+PHONY += release clean_release

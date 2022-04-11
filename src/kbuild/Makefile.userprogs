@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Build userspace programs for the target system
+#
+
+# Executables compiled from a single .c file
+# user-csingle	:= $(foreach m, $(userprogs), $(if $($(m)-objs),,$(m)))
+
+user-csingle	:= $(foreach m,$(userprogs),\
+		   $(if $($(m)-cxxobjs),,$(if $($(m)-objs),,$(m))))
+
+# Executables linked based on several .o files
+# user-cmulti	:= $(foreach m, $(userprogs), $(if $($(m)-objs),$(m)))
+
+# Executables linked based on several .o files
+user-cmulti	:= $(foreach m,$(userprogs),\
+		   $(if $($(m)-cxxobjs),,$(if $($(m)-objs),$(m))))
+
+# Objects compiled from .c files
+user-cobjs	:= $(sort $(foreach m, $(userprogs), $($(m)-objs)))
+
+# Objects compiled from .cpp files
+user-cxxobjs	:= $(sort $(foreach m, $(userprogs), $($(m)-cxxobjs)))
+
+# C++ Executables linked based on several .o files
+user-cxxmulti 	:= $(foreach m, $(userprogs), $(if $($(m)-cxxobjs),$(m)))
+
+user-csingle	:= $(addprefix $(obj)/, $(user-csingle))
+user-cmulti	:= $(addprefix $(obj)/, $(user-cmulti))
+user-cobjs	:= $(addprefix $(obj)/, $(user-cobjs))
+user-cxxmulti	:= $(addprefix $(obj)/, $(user-cxxmulti))
+user-cxxobjs	:= $(addprefix $(obj)/, $(user-cxxobjs))
+
+user_ccflags	= -Wp,-MMD,$(depfile) $(KBUILD_USERCFLAGS) $(DEBUG_CFLAGS) $(userccflags) \
+			$($(target-stem)-userccflags) -Iinclude
+
+user_cxxflags	= -Wp,-MMD,$(depfile) $(KBUILD_USERCFLAGS) $(DEBUG_CFLAGS) $(usercxxflags) \
+			$($(target-stem)-usercxxflags) -Iinclude
+
+user_ldflags	= $(KBUILD_USERLDFLAGS) $(userldflags) $($(target-stem)-userldflags)
+user_ldlibs	= $(sort $(foreach m,$($(target-stem)-userldlibs), -l$(m)))
+
+
+# We use secondary expansion to expand user_hostldlibs, because we want
+# the respective userprog to depend on the host libs it declares. Notice
+# that we have to defer expansion of user_hostldlibs in the prerequisite
+# list by adding a second $ symbol.
+.SECONDEXPANSION:
+user_hostldlibs	= $(foreach m,$($(target-stem)-userhostldlibs), $(srctree)/lib/$(m)/lib.a)
+
+# Add libs to targets if specified
+# ifneq ($(user_hostldlibs),)
+# targets += $(user_hostldlibs)
+# endif
+
+# Create an executable from a single .c file
+quiet_cmd_user_cc_c = CC [U]  $@
+      cmd_user_cc_c = $(CC) $(user_ccflags) $(user_ldflags) -o $@ $< \
+		      $(user_hostldlibs) $(user_ldlibs)
+$(user-csingle): $(obj)/%: $(src)/%.c FORCE
+	$(call if_changed_dep,user_cc_c)
+
+# Link an executable based on list of .o files
+# Notice $$ when expanding user_hostldlibs, see .SECONDEXPANSION above
+quiet_cmd_user-cmulti = LD [U]  $@
+      cmd_user-cmulti = $(CC) -I include $(user_ldflags) -o $@ \
+		    	$(addprefix $(obj)/, $($(target-stem)-objs)) \
+		    	$(user_hostldlibs) $(user_ldlibs)
+$(user-cmulti): $$(user_hostldlibs) $(user-cobjs) FORCE
+	$(call if_changed,user-cmulti)
+$(call multi_depend, $(user-cmulti), , -objs)
+
+# Link a C++ executable based on list of .o files
+# Notice $$ when expanding user_hostldlibs, see .SECONDEXPANSION above
+quiet_cmd_user-cxxmulti = LD [U]  $@
+      cmd_user-cxxmulti = $(CXX) -I include $(user_ldflags) -o $@ \
+			  $(addprefix $(obj)/, $($(target-stem)-cxxobjs)) \
+		    	  $(user_hostldlibs) $(user_ldlibs)
+$(user-cxxmulti): $$(user_hostldlibs) $(user-cxxobjs) FORCE
+	$(call if_changed,user-cxxmulti)
+$(call multi_depend, $(user-cxxmulti), , -cxxobjs)
+
+# Create .o file from a .cpp file
+quiet_cmd_user_cxx_o_cpp = CXX [U]  $@
+      cmd_user_cxx_o_cpp = $(CXX) $(user_cxxflags) -c -o $@ $<
+$(user-cxxobjs): $(obj)/%.o: $(src)/%.cpp FORCE
+	$(call if_changed_dep,user_cxx_o_cpp)
+
+# Create .o file from a .c file
+quiet_cmd_user_cc_o_c = CC [U]  $@
+      cmd_user_cc_o_c = $(CC) $(user_ccflags) -c -o $@ $<
+$(user-cobjs): $(obj)/%.o: $(src)/%.c FORCE
+	$(call if_changed_dep,user_cc_o_c)
+
+
+# Make the user progs dependent on the host ld libs
+# they are linked with.
+# $(userprogs): $(user_hostldlibs)
+
+targets += $(user-csingle) $(user-cmulti) $(user-cobjs) $(user-cxxmulti) $(user-cxxobjs)
