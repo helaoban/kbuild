@@ -1,0 +1,9 @@
+(specifications->manifest
+ '("gcc-toolchain"
+   "ncurses"
+   "m4"
+   "pkg-config"
+   "flex"
+   "bison"
+   "perf"
+   "time"))
