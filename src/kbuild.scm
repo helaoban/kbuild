@@ -53,14 +53,14 @@
 	      (let ((dest (string-append (canonicalize-path dest-dir) "/" (basename f))))
 		(display (format #f "COPYING: ~a -> ~a\n" f dest))
 		(copy-file f dest)
-		(chmod dest #o644)))
+		(system* "chmod" "+w" dest)))
 	    (list-files (debug src-dir))))
 
 (define (main args)
   (let* ((pfx (getenv "PREFIX"))
 	 (results (make-hash-table 2))
 	 (options `(,(option '(#\v "version") #f #f
-			     (lambda _ (display "kbuild-config version 0.1.8\n") (quit)))
+			     (lambda _ (display "kbuild-config version 0.1.9\n") (quit)))
 		    ,(option '(#\h "help") #f #f
 			     (lambda _ (display "\
 kbuild [options]
@@ -108,5 +108,5 @@ kbuild [options]
 			(dest (string-append "kbuild/ext/" x)))
 		    (display (format #f "COPYING: ~a -> ~a\n" src dest))
 		    (copy-file src dest)
-		    (chmod dest #o644)))
+		    (system* "chmod" "+w" dest)))
 		extensions))))
