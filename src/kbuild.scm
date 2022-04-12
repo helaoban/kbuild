@@ -59,7 +59,7 @@
   (let* ((pfx (getenv "PREFIX"))
 	 (results (make-hash-table 2))
 	 (options `(,(option '(#\v "version") #f #f
-			     (lambda _ (display "kbuild-config version 0.1.6\n") (quit)))
+			     (lambda _ (display "kbuild-config version 0.1.7\n") (quit)))
 		    ,(option '(#\h "help") #f #f
 			     (lambda _ (display "\
 kbuild [options]
@@ -93,6 +93,7 @@ kbuild [options]
 
       (system* "mkdir" "--parents" "kbuild/kconfig")
       (system* "mkdir" "--parents" "kbuild/ext")
+      (system* "mkdir" "--parents" "kbuild/scripts")
 
       (copy-dir (string-append pfx "/lib") "kbuild")
       (copy-dir (string-append pfx "/lib/kconfig") "kbuild/kconfig")
