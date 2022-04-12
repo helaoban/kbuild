@@ -93,12 +93,13 @@ this-makefile	:= $(lastword $(MAKEFILE_LIST))
 abs_srctree	:= $(realpath $(dir $(this-makefile)))
 srctree		:= $(if $(KBUILD_SRC),$(KBUILD_SRC),$(CURDIR))
 objtree		:= $(CURDIR)
+kbuild_dir	:= kbuild
 src		:= $(srctree)
 obj		:= $(objtree)
 
 VPATH		:= $(srctree)
 
-export abs_srctree srctree objtree VPATH
+export abs_srctree srctree objtree kbuild_dir VPATH
 
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
@@ -160,8 +161,8 @@ export quiet Q KBUILD_VERBOSE
 MAKEFLAGS += --include-dir=$(srctree)
 
 # We need some generic definitions (do not try to remake the file).
-$(srctree)/scripts/Kbuild.include: ;
-include $(srctree)/scripts/Kbuild.include
+$(srctree)/$(kbuild_dir)/Kbuild.include: ;
+include $(srctree)/$(kbuild_dir)/Kbuild.include
 
 # Make variables (CC, etc...)
 
@@ -179,7 +180,7 @@ AWK		= awk
 INSTALLKERNEL  := installkernel
 PERL		= perl
 ERLC		= erlc
-LFEC		= $(srctree)/scripts/lfec
+LFEC		= $(srctree)/$(kbuild_dir)/scripts/lfec
 LEX		= flex
 YACC		= bison
 JS		= esbuild
@@ -232,25 +233,8 @@ RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS -
 # ===========================================================================
 # Rules shared between *config targets and build targets
 
-# Basic helpers built in scripts/
-PHONY += scripts_basic
-scripts_basic:
-	$(Q)$(MAKE) $(build)=scripts/basic
-
 # To avoid any implicit rule to kick in, define an empty command.
-scripts/basic/%: scripts_basic ;
-
-PHONY += outputmakefile
-# outputmakefile generates a Makefile in the output directory, if using a
-# separate output directory. This allows convenient use of make in the
-# output directory.
-outputmakefile:
-ifneq ($(KBUILD_SRC),)
-	$(Q)ln -fsn $(srctree) source
-	$(Q)$(KBUILD_CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
-endif
-
+# scripts/basic/%: scripts_basic ;
 
 # To make sure we do not include .config for any of the *config targets
 # catch them early, and hand them over to scripts/kconfig/Makefile
@@ -302,13 +286,13 @@ ifeq ($(config-targets),1)
 #include $(srctree)/arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
-config: scripts_basic outputmakefile FORCE
+config: FORCE
 	$(Q)mkdir -p include/linux include/config
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) $(build)=$(kbuild_dir)/kconfig $@
 
-%config: scripts_basic outputmakefile FORCE
+%config: FORCE
 	$(Q)mkdir -p include/linux include/config
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) $(build)=$(kbuild_dir)/kconfig $@
 
 else #! config-targets
 # ===========================================================================
@@ -370,7 +354,7 @@ endif # $(dot-config)
 
 # include additional Makefiles when needed
 include-y			:=
-include-$(CONFIG_DEBUG_INFO)	+= scripts/Makefile.debug
+include-$(CONFIG_DEBUG_INFO)	+= $(kbuild_dir)/Makefile.debug
 
 include $(addprefix $(srctree)/, $(include-y))
 
@@ -382,7 +366,7 @@ all: app
 
 # objs-y		:= main
 # libs-y		:= lib
-app-dirs 		:= otp scripts config ui
+app-dirs 		:= otp config ui
 # app-dirs		:= $(objs-y) $(app-dirs)
 app-objs		:= $(patsubst %,%/built-in.o, $(objs-y))
 # app-libs		:= $(patsubst %,%/lib.a, $(libs-y))
@@ -402,42 +386,6 @@ PHONY += app
 app: $(app-dirs) $(app-extra-conf)
 	$(call if_changed,app)
 
-PHONY += release_dev
-release_dev: app scripts config
-	scripts/make-release.escript -m dev
-
-PHONY += release
-release: app scripts config
-	scripts/make-release.escript
-
-PHONY += dev
-dev:
-	$(abs_srctree)/build/flf_dev/bin/flf_dev console
-
-PHONY += env
-env:
-	@scripts/dev/env.sh
-
-PHONY += pkg
-pkg:
-	@scripts/dev/build-pkg.sh
-
-PHONY += container
-container:
-	@scripts/dev/run-container.sh
-
-PHONY += deploy-staging
-deploy-staging:
-	@scripts/dev/deploy-staging.sh
-
-PHONY += deploy-prod
-deploy-prod:
-	@scripts/dev/deploy-prod.sh
-
-
-testmake:
-	@echo $(app-dirs)
-
 # The actual objects are generated when descending, 
 # make sure no implicit rule kicks in
 $(sort $(app-all)): $(app-extra-conf) $(app-dirs) ;
@@ -449,15 +397,8 @@ $(sort $(app-all)): $(app-extra-conf) $(app-dirs) ;
 # Error messages still appears in the original language
 
 PHONY += $(app-dirs)
-$(app-dirs): scripts_basic
+$(app-dirs):
 	$(Q)$(MAKE) $(build)=$@
-
-### Testing
-
-PHONY += check
-
-check:
-	erl -noshell -pa ebin -eval "eunit:test(test_module, [verbose])" -s init stop
 
 ###
 # Cleaning is done on three levels.

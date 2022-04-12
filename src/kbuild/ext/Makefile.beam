@@ -15,10 +15,9 @@ quiet_cmd_erlc_beam_erl = ERLC $(quiet_modtag)  $@
 cmd_erlc_beam_erl = $(ERLC) $(erlc_flags) $<
 
 define rule_erlc_beam_erl
-	$(call echo-cmd,erlc_beam_erl) $(cmd_erlc_beam_erl);                     \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,erlc_beam_erl)' >    \
-	                                              $(dot-target).tmp;         \
-	rm -f $(depfile);						         \
+	$(call echo-cmd,erlc_beam_erl) $(cmd_erlc_beam_erl);			    \
+	fixdep $(depfile) $@ '$(call make-cmd,erlc_beam_erl)' > $(dot-target).tmp;  \
+	rm -f $(depfile);						            \
 	mv -f $(dot-target).tmp $(dot-target).cmd
 endef
 
@@ -26,9 +25,8 @@ quiet_cmd_lfec_beam_lfe = LFEC $(quiet_modtag)  $@
 cmd_lfec_beam_lfe = $(LFEC) $(lfec_flags) $<
 
 define rule_lfec_beam_lfe
-	$(call echo-cmd,lfec_beam_lfe) $(cmd_lfec_beam_lfe);                     \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,lfec_beam_lfe)' >    \
-	                                              $(dot-target).tmp;         \
-	rm -f $(depfile);						         \
+	$(call echo-cmd,lfec_beam_lfe) $(cmd_lfec_beam_lfe);			   \
+	fixdep $(depfile) $@ '$(call make-cmd,lfec_beam_lfe)' > $(dot-target).tmp; \
+	rm -f $(depfile);						           \
 	mv -f $(dot-target).tmp $(dot-target).cmd
 endef

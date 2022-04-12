@@ -1,7 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
-#
-# Build userspace programs for the target system
-#
+ifneq ($(otp-objs),)
 
 __otp-objs 	:= $(sort $(otp-objs))
 otp-beam	:= $(sort $(filter %.beam, $(__otp-objs)))
@@ -39,10 +36,9 @@ quiet_cmd_cc_pico_c = CC -fPIC $@
 cmd_cc_pico_c = $(CC) $(c_flags) -fPIC -c -o $@ $<
 
 define rule_cc_pico_c
-	$(call echo-cmd,cc_pico_c) $(cmd_cc_pico_c);			     \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,cc_pico_c)' >    \
-	                                              $(dot-target).tmp;     \
-	rm -f $(depfile);						     \
+	$(call echo-cmd,cc_pico_c) $(cmd_cc_pico_c);			     	    \
+	fixdep $(depfile) $@ '$(call make-cmd,cc_pico_c)' >  $(dot-target).tmp;     \
+	rm -f $(depfile);						            \
 	mv -f $(dot-target).tmp $(dot-target).cmd
 endef
 
@@ -58,3 +54,5 @@ $(otp-so): $(obj)/%: $(otp-so-hostldlibs) $(otp-so-objs) FORCE
 
 targets += $(otp-beam) $(otp-app) $(otp-so-objs) $(otp-so)
 always 	+= $(otp-beam) $(otp-app) $(otp-so-objs) $(otp-so)
+
+endif

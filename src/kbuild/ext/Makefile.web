@@ -1,3 +1,5 @@
+ifneq ($(web-objs),)
+
 join-with 	= $(subst $(space),$1,$(strip $2))
 
 web_build_dir 	= $(objtree)/ui/build
@@ -28,8 +30,7 @@ cmd_js = NODE_PATH=$(js_node_path) $(JS) $< --outfile=$@ $(js_flags)
 define rule_js
 	$(call echo-cmd,js) $(cmd_js);                     		 	 \
 	printf '%s: %s' $@ $< > $(depfile);					 \
-	scripts/basic/fixdep $(depfile) $@ '$(call make-cmd,js)' >    	 	 \
-	                                              $(dot-target).tmp;         \
+	fixdep $(depfile) $@ '$(call make-cmd,js)' > $(dot-target).tmp;          \
 	rm -f $(depfile);						         \
 	mv -f $(dot-target).tmp $(dot-target).cmd
 endef
@@ -80,3 +81,5 @@ always 		+= $(js-objs) $(css-objs) $(yaws-objs) $(jpg-objs) $(png-objs) $(svg-ob
 
 # targets += yolo
 # always += yolo
+
+endif

@@ -1,3 +1,5 @@
+ifneq ($(hostprogs-y),)
+
 # LEX
 # ---------------------------------------------------------------------------
 quiet_cmd_flex = LEX     $@
@@ -185,3 +187,4 @@ $(host-cshlib): $(obj)/%: $(host-cshobjs) FORCE
 targets += $(host-csingle)  $(host-cmulti) $(host-cobjs) \
 	   $(host-cxxmulti) $(host-cxxobjs) $(host-cshlib) $(host-cshobjs) 
 
+endif
