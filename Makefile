@@ -37,13 +37,15 @@ distclean:
 
 .PHONY: distclean
 
-
 install: src
+	install -D src/fixdep $(PREFIX)/bin/fixdep
 	install -D src/kconfig/kb-conf $(PREFIX)/bin/kb-conf
 	install -D src/kconfig/kb-nconf $(PREFIX)/bin/kb-nconf
 	install -D src/kbuild.sh $(PREFIX)/bin/kbuild
 	install -D src/kbuild.scm $(PREFIX)/bin/kbuild.scm
-	for file in src/kbuild/*; do install -D "$$file" $(PREFIX)/lib/$$(basename "$$file"); done
+	for file in $$(find src/kbuild -type f); do \
+		install -D "$$file" $(PREFIX)/lib/$${file##src/kbuild/}; \
+	done
 
 .PHONY: install
 
