@@ -1,5 +1,9 @@
-# Rules for compiling beam sources
-# ---------------------------------------------------------------------------
+Compile BEAM sources (.erl -> .beam, .lfe -> .beam)
+---------------------------------------------------------------------------
+
+NOTE this is not the same as compiling sources for OTP-compliant
+applications, refer to Makefile.otp for that. This is for standalone
+beam files.
 
 $(obj)/ebin:
 	mkdir --parents $@
@@ -7,26 +11,8 @@ $(obj)/ebin:
 $(obj)/priv:
 	mkdir --parents $@
 
-# # Pass CONFIG_* variables as erlang macros.
-# config-vars 	= $(sort $(filter CONFIG_%, $(.VARIABLES)))
-# erlc_flags 	+= $(foreach v,$(config-vars),'-D$(v)=$($(v))')
+$(obj)/ebin/%.beam: $(src)/%.erl FORCE | $(obj)/ebin
+	$(call if_changed_rule,erlc_beam_erl)
 
-quiet_cmd_erlc_beam_erl = ERLC $(quiet_modtag)  $@
-cmd_erlc_beam_erl = $(ERLC) $(erlc_flags) $<
-
-define rule_erlc_beam_erl
-	$(call echo-cmd,erlc_beam_erl) $(cmd_erlc_beam_erl);			    \
-	fixdep $(depfile) $@ '$(call make-cmd,erlc_beam_erl)' > $(dot-target).tmp;  \
-	rm -f $(depfile);						            \
-	mv -f $(dot-target).tmp $(dot-target).cmd
-endef
-
-quiet_cmd_lfec_beam_lfe = LFEC $(quiet_modtag)  $@
-cmd_lfec_beam_lfe = $(LFEC) $(lfec_flags) $<
-
-define rule_lfec_beam_lfe
-	$(call echo-cmd,lfec_beam_lfe) $(cmd_lfec_beam_lfe);			   \
-	fixdep $(depfile) $@ '$(call make-cmd,lfec_beam_lfe)' > $(dot-target).tmp; \
-	rm -f $(depfile);						           \
-	mv -f $(dot-target).tmp $(dot-target).cmd
-endef
+$(obj)/ebin/%.beam: $(src)/%.lfe $FORCE | $(obj)/ebin
+	$(call if_changed_rule,lfec_beam_lfe)

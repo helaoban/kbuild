@@ -11,9 +11,9 @@
   x)
 
 (define typemap
-  '(("otp" .  "Makefile.otp")
-    ("beam" . "Makefile.beam")
-    ("web"  . "Makefile.web")))
+  '(("otp"  . ("Makefile.otp"  . ("Makefile.beamc")))
+    ("beam" . ("Makefile.beam" . ("Makefile.beamc")))
+    ("web"  . ("Makefile.web"  . ()))))
 
 (define (list-files dir)
   (define (enter? file stat result)
@@ -52,14 +52,15 @@
   (for-each (lambda (f)
 	      (let ((dest (string-append (canonicalize-path dest-dir) "/" (basename f))))
 		(display (format #f "COPYING: ~a -> ~a\n" f dest))
-		(copy-file f dest)))
+		(copy-file f dest)
+		(chmod dest #o644)))
 	    (list-files (debug src-dir))))
 
 (define (main args)
   (let* ((pfx (getenv "PREFIX"))
 	 (results (make-hash-table 2))
 	 (options `(,(option '(#\v "version") #f #f
-			     (lambda _ (display "kbuild-config version 0.1.7\n") (quit)))
+			     (lambda _ (display "kbuild-config version 0.1.8\n") (quit)))
 		    ,(option '(#\h "help") #f #f
 			     (lambda _ (display "\
 kbuild [options]
@@ -80,16 +81,19 @@ kbuild [options]
 		 (display "unrecognized option " n))
 	       (lambda (op loads) (cons op loads))
 	       '())
+
     (let ((extensions
-	   (map
-	    (lambda (x)
+	   (fold
+	    (lambda (x acc)
 	      (let ((entry (assoc x typemap)))
 		(if entry
-		    (cdr entry)
+		    (let ((file (car (cdr entry)))
+			  (deps (cdr (cdr entry))))
+		      (append (cons file deps) acc))
 		    (begin
 		      (format (current-error-port) "Invalid type: ~a\n" x)
 		      (quit 1)))))
-	    (hashq-ref results 'types))))
+	    '() (hashq-ref results 'types))))
 
       (system* "mkdir" "--parents" "kbuild/kconfig")
       (system* "mkdir" "--parents" "kbuild/ext")
@@ -103,5 +107,6 @@ kbuild [options]
 		  (let ((src (string-append pfx "/lib/ext/" x))
 			(dest (string-append "kbuild/ext/" x)))
 		    (display (format #f "COPYING: ~a -> ~a\n" src dest))
-		    (copy-file src dest)))
+		    (copy-file src dest)
+		    (chmod dest #o644)))
 		extensions))))
