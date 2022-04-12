@@ -2,9 +2,18 @@
 !#
 
 (use-modules (ice-9 ftw))
+(use-modules (ice-9 match))
+(use-modules (srfi srfi-1))
+(use-modules (srfi srfi-37))
+
+(define (debug x)
+  (format (current-output-port) "~a\n" x)
+  x)
+
 (define typemap
-  '(("otp" . "Makefile.otp")
-    ("beam" . "Makefile.beam")))
+  '(("otp" .  "Makefile.otp")
+    ("beam" . "Makefile.beam")
+    ("web"  . "Makefile.web")))
 
 (define (list-files dir)
   (define (enter? file stat result)
@@ -26,8 +35,26 @@
 		    '()
 		    dir))
 
+(define (mkdir-with-parents dir)
+  "Create directory DIR and all its ancestors."
+  (let ((not-slash (char-set-complement (char-set #\/))))
+    (let loop ((components (string-tokenize dir not-slash))
+               (root ""))
+      (match components
+             ((head tail ...)
+              (let ((file (string-append root "/" head)))
+		(unless (file-exists? file)
+		  (mkdir file))
+		(loop tail file)))
+             (_ #t)))))
 
-(use-modules (srfi srfi-37))
+(define* (copy-dir src-dir dest-dir)
+  (for-each (lambda (f)
+	      (let ((dest (string-append (canonicalize-path dest-dir) "/" (basename f))))
+		(display (format #f "COPYING: ~a -> ~a\n" f dest))
+		(copy-file f dest)))
+	    (list-files (debug src-dir))))
+
 (define (main args)
   (let* ((pfx (getenv "PREFIX"))
 	 (results (make-hash-table 2))
@@ -48,26 +75,28 @@ kbuild [options]
 				 ))))))
     (hashq-set! results 'types '())
     (args-fold args
-		       options
-		       (lambda (o n x vals)
-			 (display "unrecognized option " n))
-		       (lambda (op loads) (cons op loads))
-		       '())
-    (if (access? "kbuild" F_OK) #t (mkdir "kbuild"))
-    (display (list-files "src/kbuild"))
-    ;; (for-each
-    ;;  (lambda (x)
-    ;;    (let ((entry (assoc x typemap)))
-    ;; 	 (if entry
-    ;; 	     (let* ((filename (cdr entry))
-    ;; 		    (src (string-append pfx "/lib/" filename))
-    ;; 		    (dest (string-append "kbuild/" filename)))
-    ;; 	       (display (format #f "COPYING: ~a -> ~a\n" src dest))
-    ;; 	       (copy-file src dest))
-    ;; 	     (begin
-    ;; 	       (format (current-error-port) "Invalid type: ~a\n" x)
-    ;; 	       (display (hashq-ref results 'types))
-    ;; 	       (quit 1)))))
-    ;;  (hashq-ref results 'types))
-    (display "ok.\n")
-    (newline)))
+	       options
+	       (lambda (o n x vals)
+		 (display "unrecognized option " n))
+	       (lambda (op loads) (cons op loads))
+	       '())
+    (let ((extensions
+	   (map
+	    (lambda (x)
+	      (let ((entry (assoc x typemap)))
+		(if entry
+		    (cdr entry)
+		    (begin
+		      (format (current-error-port) "Invalid type: ~a\n" x)
+		      (quit 1)))))
+	    (hashq-ref results 'types))))
+      (system* "mkdir" "--parents" "kbuild/kconfig")
+      (system* "mkdir" "--parents" "kbuild/ext")
+      (copy-dir (string-append pfx "/lib") "kbuild")
+      (copy-dir (string-append pfx "/lib/kconfig") "kbuild/kconfig")
+      (for-each (lambda (x)
+		  (let ((src (string-append pfx "/lib/ext/" x))
+			(dest (string-append "kbuild/ext/" x)))
+		    (display (format #f "COPYING: ~a -> ~a\n" src dest))
+		    (copy-file src dest)))
+		extensions))))
