@@ -59,7 +59,7 @@
   (let* ((pfx (getenv "PREFIX"))
 	 (results (make-hash-table 2))
 	 (options `(,(option '(#\v "version") #f #f
-			     (lambda _ (display "kbuild-config version 0.1.0\n") (quit)))
+			     (lambda _ (display "kbuild-config version 0.1.5\n") (quit)))
 		    ,(option '(#\h "help") #f #f
 			     (lambda _ (display "\
 kbuild [options]
