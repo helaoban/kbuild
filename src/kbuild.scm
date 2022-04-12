@@ -90,10 +90,14 @@ kbuild [options]
 		      (format (current-error-port) "Invalid type: ~a\n" x)
 		      (quit 1)))))
 	    (hashq-ref results 'types))))
+
       (system* "mkdir" "--parents" "kbuild/kconfig")
       (system* "mkdir" "--parents" "kbuild/ext")
+
       (copy-dir (string-append pfx "/lib") "kbuild")
       (copy-dir (string-append pfx "/lib/kconfig") "kbuild/kconfig")
+      (copy-dir (string-append pfx "/lib/scripts") "kbuild/scripts")
+
       (for-each (lambda (x)
 		  (let ((src (string-append pfx "/lib/ext/" x))
 			(dest (string-append "kbuild/ext/" x)))
