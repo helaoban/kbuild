@@ -383,7 +383,7 @@ quiet_cmd_app = BUILD $@
 
 PHONY += app
 # $(app-all)
-app: $(app-dirs) $(app-extra-conf)
+app: $(app-dirs)
 	$(call if_changed,app)
 
 # The actual objects are generated when descending, 
@@ -397,7 +397,7 @@ $(sort $(app-all)): $(app-extra-conf) $(app-dirs) ;
 # Error messages still appears in the original language
 
 PHONY += $(app-dirs)
-$(app-dirs):
+$(app-dirs): $(app-extra-conf)
 	$(Q)$(MAKE) $(build)=$@
 
 ###
